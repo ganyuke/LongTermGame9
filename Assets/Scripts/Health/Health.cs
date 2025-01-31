@@ -3,25 +3,30 @@ using UnityEngine.Events;
 
 public class Health : MonoBehaviour
 {
-    public int health = 50;
-    
+    private int value;
+
+    public int Value => value;
+
     // Only take damage from these types. 
-    // Does not prevent `onDamage` from being invoked.
-    public DamageType vulnerableDamageTypes;
+    // Does not prevent `onDamage` from being invoked, only sets damage to zero.
+    [SerializeField]
+    private DamageType vulnerableDamageTypes;
     
     // Does not invoke after `onDeath`
     public UnityEvent<int, DamageType> onDamage;
     
     public UnityEvent onDeath;
-
-    public void TakeDamage(int damage, DamageType damageType)
+    
+    public void ApplyDamage(int damage, DamageType damageType)
     {
-        if (vulnerableDamageTypes.HasFlag(damageType))
+        if (!vulnerableDamageTypes.HasFlag(damageType))
         {
-            health -= damage;   
+            damage = 0;
         }
         
-        if (health <= 0)
+        value -= damage;
+        
+        if (value <= 0)
         {
             onDeath.Invoke();
             return;
