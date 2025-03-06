@@ -12,57 +12,28 @@ namespace SeedSnatcher
     
     public class SnatcherController : MonoBehaviour
     {
-        [SerializeField] private GameObject target;
-        [SerializeField] private string targetTag = "ExpiredSeed";
-        private ISnatcherMovement snatcherMovement;
-        private SnatcherState snatcherState;
-        private Dictionary<SnatcherState, ISnatcherMovement> snatcherMovements;
-        
-        private void SetTarget(GameObject newTarget)
-        {
-            target = newTarget;
-        }
+        private SnatcherMovement snatcherMovement;
+        private Dictionary<SnatcherState, SnatcherMovement> snatcherMovements;
 
-        // Find seed GameObject that have been on the ground too long 
-        private void FindTarget()
+        public void SetState(SnatcherState newState)
         {
-            var possibleTarget = GameObject.Find(targetTag);
-            // TODO: check whether already targeted by another snatcher
-            SetTarget(possibleTarget);
-        }
-
-        private bool HasTarget()
-        {
-            return (bool)target;
-        }
-
-        private void SetState(SnatcherState newState, Vector3 targetPosition)
-        {
-            snatcherState = newState;
             snatcherMovements.TryGetValue(newState, out snatcherMovement);
-            snatcherMovement?.Init(transform.position, targetPosition);
+            snatcherMovement?.Init();
         }
 
         private void Start()
         {
-            snatcherMovements = new Dictionary<SnatcherState, ISnatcherMovement>()
+            snatcherMovements = new Dictionary<SnatcherState, SnatcherMovement>()
             {
                 { SnatcherState.Idle, GetComponent<SnatcherIdle>()},
                 { SnatcherState.Diving, GetComponent<SnatcherDive>()}
             };
             
-            SetState(SnatcherState.Idle, transform.position + new Vector3(-10, 0, 0));
+            SetState(SnatcherState.Idle);
         }
 
         private void Update()
         {
-            if (HasTarget() && snatcherState != SnatcherState.Diving)
-            {
-                SetState(SnatcherState.Diving, target.transform.position);
-            } else if (!HasTarget() && snatcherState != SnatcherState.Idle)
-            {
-                SetState(SnatcherState.Idle, transform.position + new Vector3(-10, 0, 0));
-            }
             snatcherMovement.Loop();
         }
     }

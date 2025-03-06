@@ -3,15 +3,13 @@ using UnityEngine;
 
 namespace SeedSnatcher.Movement
 {
-    public class SnatcherDive : MonoBehaviour, ISnatcherMovement
+    public class SnatcherDive : SnatcherMovement
     {
-        [SerializeField] private int diveStage = 0;
-        [SerializeField] private Vector3 startPosition;
-        [SerializeField] private Vector3 endPosition;
-        [SerializeField] private float speed = 0.1f;
-        [SerializeField] private float positionTolerance = 0.5f;
+        // Dive vars
+        [SerializeField] private int diveStage;
         private List<Vector3> controlPoints;
         private List<Vector3> path;
+        [SerializeField] private int diveCount;
 
         // creates the curve which the bird should dive
         // more control points may increase the dive steepness
@@ -54,35 +52,74 @@ namespace SeedSnatcher.Movement
 
         private void ReverseDiveCurve()
         {
-            controlPoints.Reverse();
+            var originalStart = startPosition;
+            startPosition = endPosition;
+            originalStart.x = 2 * endPosition.x - originalStart.x;
+            endPosition = originalStart;
+            SetupDiveCurve();
         }
 
         private void Dive()
         {
-            if (diveStage >= path.Count - 1)
-            {
-                diveStage = 0;
-                ReverseDiveCurve();
-                GeneratePath();
-            }
-
             var targetPosition = path[diveStage];
             var currentPosition = transform.position;
             if (Vector3.Distance(currentPosition, targetPosition) < positionTolerance) ++diveStage;
             transform.position = Vector3.MoveTowards(currentPosition, targetPosition, speed * Time.deltaTime);
+
+            if (diveStage < path.Count - 1)
+            {
+                return;
+            }
+
+            ++diveCount;
+            diveStage = 0;
+            ReverseDiveCurve();
+            GeneratePath();
+            Debug.DrawLine(startPosition, endPosition, Color.green, 90);
+        }
+
+        private void ReturnToIdleState()
+        {
+            GetSnatcherController().SetState(SnatcherState.Idle);
+        }
+
+        public override void Init()
+        {
+            Init(transform.position, GetSnatcherTargeting().GetTargetPosition());
         }
 
         public void Init(Vector3 startPos, Vector3 endPos)
         {
+            if (endPos.x > startPos.x && IsFacingLeft())
+            {
+                FlipSprite();
+            }
+
+            diveCount = 0;
             startPosition = startPos;
             endPosition = endPos;
             SetupDiveCurve();
             GeneratePath();
             Debug.DrawLine(startPosition, endPosition, Color.green, 90);
         }
-        
-        public void Loop()
+
+        public override void Loop()
         {
+            // return to idle when initial dive and dive back up are complete
+            if (diveCount > 1)
+            {
+                GetSnatcherTargeting().RemoveTarget(); // ideally, the target should be nullified at the bottom of the dive instead of the end
+                ReturnToIdleState();
+                return;
+            }
+
+            // stop dive prematurely when the target disappears
+            if (diveCount <= 1 && !GetSnatcherTargeting().HasTarget())
+            {
+                ReturnToIdleState();
+                return;
+            }
+
             Dive();
         }
     }
