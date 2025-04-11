@@ -31,7 +31,15 @@ namespace SeedSnatcher.Seed
 
             public void RemoveSeed(SnatchableSeed snatchableSeed)
             {
-                expiredSeeds.Remove(snatchableSeed);
+                
+                if (snatchableSeed.isExpired)
+                {
+                    expiredSeeds.Remove(snatchableSeed);
+                }
+                else
+                {
+                    unexpiredSeeds.Remove(snatchableSeed);
+                }
             }
 
             private void CheckExpiredSeeds()
