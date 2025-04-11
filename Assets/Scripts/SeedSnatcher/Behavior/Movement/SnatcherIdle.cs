@@ -52,6 +52,8 @@ namespace SeedSnatcher.Behavior.Movement
         
         public override void Init()
         {
+            StartAnimation();
+            SetSprite();
             MoveToPatrolPoint();
         }
 

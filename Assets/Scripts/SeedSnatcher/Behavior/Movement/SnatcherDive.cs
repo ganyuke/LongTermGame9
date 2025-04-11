@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using SeedSnatcher.Utils;
+using Unity.Mathematics.Geometry;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace SeedSnatcher.Behavior.Movement
@@ -18,6 +20,8 @@ namespace SeedSnatcher.Behavior.Movement
          * when the bird reaches diveStep 1.
          */
         private bool isNewStage = true;
+
+        private float acceleratedSpeed;
         
         /**
          * Dives have three stages: start, bottom, and end.
@@ -105,12 +109,15 @@ namespace SeedSnatcher.Behavior.Movement
 
         public override void Init()
         {
+            StopAnimation();
+            SetSprite();
             // reset values to defaults in case this was previously used
             diveStage = 0;
             diveStep = 0;
             controlPoints = null;
             path = null;
             isNewStage = true;
+            acceleratedSpeed = speed;
         }
 
         public override void Loop()
@@ -149,11 +156,27 @@ namespace SeedSnatcher.Behavior.Movement
             
             // Move to next point in curve
             var nextPosition = path[diveStep];
-            transform.position = Vector3.MoveTowards(transform.position, nextPosition, speed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, nextPosition, acceleratedSpeed * Time.deltaTime);
             if (HasReachedPosition(nextPosition))
             {
                 diveStep++;
+                if (diveStage < 1)
+                {
+                    acceleratedSpeed = Mathf.Max(speed, 5.0f * (diveStep + 1) / path.Count + 0.2f);
+                }
+                else
+                {
+                    acceleratedSpeed = Mathf.Max(speed, 5.0f * (path.Count - diveStep) / path.Count + 0.2f);
+                }
             }
+            // Orient bird to next point
+            // float xComp = nextPosition.x - StartPosition.x;
+            // float yComp = nextPosition.y - StartPosition.y;
+            // float angle = Mathf.Atan2(yComp, xComp) * Mathf.Rad2Deg;
+            Vector2 target = nextPosition - StartPosition;
+            float angle = Vector2.SignedAngle(IsFacingLeft() ? Vector2.left : Vector2.right, target);
+            transform.rotation = Quaternion.Euler(0.0f, 0.0f, angle);
+            
             
             // Move to next stage when end of curve reached
             if (diveStep < path.Count) return;

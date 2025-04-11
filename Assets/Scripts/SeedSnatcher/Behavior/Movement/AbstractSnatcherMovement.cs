@@ -13,11 +13,32 @@ namespace SeedSnatcher.Behavior.Movement
         
         private SnatcherTargeting snatcherTargeting;
         private SnatcherController snatcherController;
+        private SpriteRenderer spriteRenderer;
+        private Animator animator;
 
+        [SerializeField] private Sprite sprite;
+        
         private void Start()
         {
             snatcherTargeting = GetComponentInParent<SnatcherTargeting>();
             snatcherController = GetComponentInParent<SnatcherController>();
+            spriteRenderer = GetComponentInParent<SpriteRenderer>();
+            animator = GetComponentInParent<Animator>();
+        }
+
+        protected void StopAnimation()
+        {
+            animator.enabled = false;
+        }
+        
+        protected void StartAnimation()
+        {
+            animator.enabled = true;
+        }
+        
+        protected void SetSprite()
+        {
+            spriteRenderer.sprite = sprite;
         }
 
         protected SnatcherTargeting GetSnatcherTargeting()
@@ -41,7 +62,7 @@ namespace SeedSnatcher.Behavior.Movement
             transform.localScale = new Vector3(flippedX, localScale.y, localScale.z);
         }
         
-        private bool IsFacingLeft()
+        protected bool IsFacingLeft()
         {
             var localScale = transform.localScale;
             return localScale.x < 0;
